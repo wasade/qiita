@@ -16,108 +16,40 @@ from qiita_db.user import User
 from qiita_pet.test.rest.test_base import RESTHandlerTestCase
 
 
-USABLE_SAMPLES_FOR_LOAD = {
-    '1.SKM8.640201': {'season_environment': 'blah',
-                      'assigned_from_geo': 'blah',
-                      'texture': 'blah',
-                      'taxon_id': 'blah',
-                      'depth': 'blah',
-                      'host_taxid': 'blah',
-                      'common_name': 'blah',
-                      'water_content_soil': 'blah',
-                      'elevation': 'blah',
-                      'temp': 'blah',
-                      'tot_nitro': 'blah',
-                      'samp_salinity': 'blah',
-                      'altitude': 'blah',
-                      'env_biome': 'blah',
-                      'country': 'blah',
-                      'ph': 'blah',
-                      'anonymized_name': 'blah',
-                      'tot_org_carb': 'blah',
-                      'description_duplicate': 'blah',
-                      'env_feature': 'blah',
-                      'physical_specimen_location': 'blah',
-                      'physical_specimen_remaining': 'blah',
-                      'dna_extracted': 'blah',
-                      'sample_type': 'blah',
-                      'collection_timestamp': 'blah',
-                      'host_subject_id': 'blah',
-                      'description': 'blah',
-                      'latitude': 'blah',
-                      'longitude': 'blah',
-                      'scientific_name': 'blah'},
-    '1.SKM8.640197': {'season_environment': 'blah',
-                      'assigned_from_geo': 'blah',
-                      'texture': 'blah',
-                      'taxon_id': 'blah',
-                      'depth': 'blah',
-                      'host_taxid': 'blah',
-                      'common_name': 'blah',
-                      'water_content_soil': 'blah',
-                      'elevation': 'blah',
-                      'temp': 'blah',
-                      'tot_nitro': 'blah',
-                      'samp_salinity': 'blah',
-                      'altitude': 'blah',
-                      'env_biome': 'blah',
-                      'country': 'blah',
-                      'ph': 'blah',
-                      'anonymized_name': 'blah',
-                      'tot_org_carb': 'blah',
-                      'description_duplicate': 'blah',
-                      'env_feature': 'blah',
-                      'physical_specimen_location': 'blah',
-                      'physical_specimen_remaining': 'blah',
-                      'dna_extracted': 'blah',
-                      'sample_type': 'blah',
-                      'collection_timestamp': 'blah',
-                      'host_subject_id': 'blah',
-                      'description': 'blah',
-                      'latitude': 'blah',
-                      'longitude': 'blah',
-                      'scientific_name': 'blah'},
-    'blank.a1': {'season_environment': 'blah',
-                 'assigned_from_geo': 'blah',
-                 'texture': 'blah',
-                 'taxon_id': 'blah',
-                 'depth': 'blah',
-                 'host_taxid': 'blah',
-                 'common_name': 'blah',
-                 'water_content_soil': 'blah',
-                 'elevation': 'blah',
-                 'temp': 'blah',
-                 'tot_nitro': 'blah',
-                 'samp_salinity': 'blah',
-                 'altitude': 'blah',
-                 'env_biome': 'blah',
-                 'country': 'blah',
-                 'ph': 'blah',
-                 'anonymized_name': 'blah',
-                 'tot_org_carb': 'blah',
-                 'description_duplicate': 'blah',
-                 'env_feature': 'blah',
-                 'physical_specimen_location': 'blah',
-                 'physical_specimen_remaining': 'blah',
-                 'dna_extracted': 'blah',
-                 'sample_type': 'blah',
-                 'collection_timestamp': 'blah',
-                 'host_subject_id': 'blah',
-                 'description': 'blah',
-                 'latitude': 'blah',
-                 'longitude': 'blah',
-                 'scientific_name': 'blah'}
-}
+def _sample_creator(ids):
+    categories = ['season_environment',
+                  'assigned_from_geo', 'texture', 'taxon_id',
+                  'depth', 'host_taxid', 'common_name',
+                  'water_content_soil', 'elevation', 'temp',
+                  'tot_nitro', 'samp_salinity', 'altitude',
+                  'env_biome', 'country', 'ph', 'anonymized_name',
+                  'tot_org_carb', 'description_duplicate',
+                  'env_feature', 'physical_specimen_location',
+                  'physical_specimen_remaining', 'dna_extracted',
+                  'sample_type', 'collection_timestamp',
+                  'host_subject_id', 'description',
+                  'latitude', 'longitude', 'scientific_name']
+    return {i: {c: 1 for c in categories} for i in ids}
 
 
 class StudySamplesHandlerTests(RESTHandlerTestCase):
     def test_patch_no_study(self):
-        body = {'sampleid1':{'category_a': 'value_a'},
-                'sampleid2':{'category_b': 'value_b'}}
+        body = {'sampleid1': {'category_a': 'value_a'},
+                'sampleid2': {'category_b': 'value_b'}}
 
         exp = {'message': 'Study not found'}
-        response = self.patch('/api/v1/study/0/samples', headers=self.headers)
+        response = self.patch('/api/v1/study/0/samples', headers=self.headers,
+                              data=body, asjson=True)
         self.assertEqual(response.code, 404)
+        obs = json_decode(response.body)
+        self.assertEqual(obs, exp)
+
+    def test_patch_no_samples(self):
+        body = {}
+        exp = {'message': 'No samples provided'}
+        response = self.patch('/api/v1/study/1/samples', headers=self.headers,
+                              data=body, asjson=True)
+        self.assertEqual(response.code, 400)
         obs = json_decode(response.body)
         self.assertEqual(obs, exp)
 
@@ -137,77 +69,77 @@ class StudySamplesHandlerTests(RESTHandlerTestCase):
         }
 
         new_study = Study.create(User('test@foo.bar'),
-                                 "Some New Study for test", [1],
+                                 "Some New Study for test jr", [1],
                                  info)
 
-        body = {'sampleid1':{'category_a': 'value_a'},
-                'sampleid2':{'category_b': 'value_b'}}
+        body = {'sampleid1': {'category_a': 'value_a'},
+                'sampleid2': {'category_b': 'value_b'}}
 
         exp = {'message': 'No sample information found'}
         response = self.patch('/api/v1/study/%d/samples' % new_study.id,
-                              headers=self.headers)
+                              headers=self.headers, data=body, asjson=True)
         self.assertEqual(response.code, 404)
         obs = json_decode(response.body)
         self.assertEqual(obs, exp)
 
     def test_patch_sample_ids_exist_incomplete_metadata(self):
-        body = {'1.SKM3.640197':{'elevation': 'xyz'},
-                '1.SKM1.640183':{'elevation': 'foo'}}
+        body = {'1.SKM3.640197': {'elevation': 'xyz'},
+                '1.SKM1.640183': {'elevation': 'foo'}}
 
         exp = {'message': 'Not all sample information categories provided'}
-        response = self.patch('/api/v1/study/1/samples', headers=self.headers)
+        response = self.patch('/api/v1/study/1/samples', headers=self.headers,
+                              data=body, asjson=True)
         self.assertEqual(response.code, 400)
         obs = json_decode(response.body)
         self.assertEqual(obs, exp)
 
     def test_patch_sample_ids_complete_metadata_and_unknown_metadata(self):
-        body = USABLE_SAMPLES_FOR_LOAD.copy()
+        body = _sample_creator(['1.SKM8.640201', 'blank.a1'])
         body['1.SKM8.640201']['DOES_NOT_EXIST'] = 'foo'
         body['blank.a1']['WHAT'] = 'bar'
 
-        exp = {'message': "The following are unrecognized categories: "
-                          "'DOES_NOT_EXIST, WHAT'"}
-        response = self.patch('/api/v1/study/1/samples', headers=self.headers)
+        exp = {'message': "Some categories do not exist in the sample "
+                          "information",
+               'categories_not_found': ['DOES_NOT_EXIST', 'WHAT']}
+        response = self.patch('/api/v1/study/1/samples', headers=self.headers,
+                              data=body, asjson=True)
         self.assertEqual(response.code, 400)
         obs = json_decode(response.body)
         self.assertEqual(obs, exp)
 
     def test_patch_sample_ids_already_exist(self):
-        body = USABLE_SAMPLES_FOR_LOAD.copy()
-        del body['blank.a1']
-        response = self.patch('/api/v1/study/1/samples', headers=self.headers)
+        body = _sample_creator(['1.SKM8.640201', '1.SKM3.640197'])
+        response = self.patch('/api/v1/study/1/samples', headers=self.headers,
+                              data=body, asjson=True)
         self.assertEqual(response.code, 200)
         df = Study(1).sample_template.to_dataframe()
-        self.assertEqual(df.loc['1.SKM8.640201']['elevation'], 'blah')
-        self.assertEqual(df.loc['1.SKM8.640197']['elevation'], 'blah')
+        self.assertEqual(df.loc['1.SKM8.640201']['elevation'], '1')
+        self.assertEqual(df.loc['1.SKM3.640197']['elevation'], '1')
 
         # make sure we didn't touch other samples
-        self.assertNotEqual(df.loc['1.SKM8.640180']['elevation'], 'blah')
+        self.assertNotEqual(df.loc['1.SKM4.640180']['elevation'], '1')
 
     def test_patch_sample_ids_do_not_exist(self):
-        body = USABLE_SAMPLES_FOR_LOAD.copy()
-        del body['1.SKM8.640201']
-        del body['1.SKM8.640197']
-        response = self.patch('/api/v1/study/1/samples', headers=self.headers)
-        self.assertEqual(response.code, 200)
+        body = _sample_creator(['blank.a1'])
+        response = self.patch('/api/v1/study/1/samples', headers=self.headers,
+                              data=body, asjson=True)
+        self.assertEqual(response.code, 201)
         df = Study(1).sample_template.to_dataframe()
-        self.assertNotEqual(df.loc['1.SKM8.640201']['elevation'], 'blah')
-        self.assertEqual(df.loc['blank.a1']['elevation'], 'blah')
+        self.assertNotEqual(df.loc['1.SKD7.640191']['elevation'], '1')
+        self.assertEqual(df.loc['1.blank.a1']['elevation'], '1')
 
     def test_patch_sample_ids_partially_exist(self):
-        # this is a modify for some samples, and a load for one sample
-        body = USABLE_SAMPLES_FOR_LOAD.copy()
-        del body['1.SKM8.640201']
-        del body['1.SKM8.640197']
-        response = self.patch('/api/v1/study/1/samples', headers=self.headers)
-        self.assertEqual(response.code, 200)
+        body = _sample_creator(['blank.b1', '1.SKM5.640177', '1.SKB9.640200'])
+        response = self.patch('/api/v1/study/1/samples', headers=self.headers,
+                              data=body, asjson=True)
+        self.assertEqual(response.code, 201)
         df = Study(1).sample_template.to_dataframe()
-        self.assertEqual(df.loc['blank.a1']['elevation'], 'blah')
-        self.assertEqual(df.loc['1.SKM8.640201']['elevation'], 'blah')
-        self.assertEqual(df.loc['1.SKM8.640197']['elevation'], 'blah')
+        self.assertEqual(df.loc['1.blank.b1']['elevation'], '1')
+        self.assertEqual(df.loc['1.SKM5.640177']['elevation'], '1')
+        self.assertEqual(df.loc['1.SKB9.640200']['elevation'], '1')
 
         # make sure we didn't touch other samples
-        self.assertNotEqual(df.loc['1.SKM8.640180']['elevation'], 'blah')
+        self.assertNotEqual(df.loc['1.SKD3.640198']['elevation'], '1')
 
     def test_get_valid(self):
         exp = sorted(['1.SKB2.640194', '1.SKM4.640180', '1.SKB3.640195',
