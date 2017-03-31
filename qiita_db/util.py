@@ -896,12 +896,12 @@ def filepath_id_to_rel_path(filepath_id):
                     LEFT JOIN qiita.artifact_filepath USING (filepath_id)
                  WHERE filepath_id = %s"""
         qdb.sql_connection.TRN.add(sql, [filepath_id])
+        # It should be only one row
         mp, fp, sd, a_id = qdb.sql_connection.TRN.execute_fetchindex()[0]
         if sd:
             result = join(mp, str(a_id), fp)
         else:
             result = join(mp, fp)
-        # It should be only one row
         return result
 
 
@@ -1364,6 +1364,9 @@ def generate_study_list(study_ids, build_samples, public_only=False):
             (SELECT array_agg(email ORDER BY email) FROM qiita.study_users
                 LEFT JOIN qiita.qiita_user USING (email)
                 WHERE study_id=qiita.study.study_id) AS shared_with_email
+    - all study tags
+            (SELECT array_agg(study_tag) FROM qiita.per_study_tags
+                WHERE study_id=qiita.study.study_id) AS study_tags
     """
     with qdb.sql_connection.TRN:
         sql = """
@@ -1429,7 +1432,9 @@ def generate_study_list(study_ids, build_samples, public_only=False):
                     WHERE study_id=qiita.study.study_id) AS shared_with_name,
                 (SELECT array_agg(email ORDER BY email) FROM qiita.study_users
                     LEFT JOIN qiita.qiita_user USING (email)
-                    WHERE study_id=qiita.study.study_id) AS shared_with_email
+                    WHERE study_id=qiita.study.study_id) AS shared_with_email,
+                (SELECT array_agg(study_tag) FROM qiita.per_study_tags
+                    WHERE study_id=qiita.study.study_id) AS study_tags
                 FROM qiita.study
                 LEFT JOIN qiita.study_person ON (
                     study_person_id=principal_investigator_id)
